@@ -235,17 +235,19 @@ class Api(object):
         return request
 
     @auth
-    def delete(self, obj_class, **kwargs):
+    def delete(self, obj_class, simulate=False, **kwargs):
         """
         Handles the core/delete operation in iTOP.
         Parameters:
         ojb_class: iTOP's device class from datamodel
+        simulate: False by default
         **kwargs: any field from the datamodel to identify the object
         """
 
         data = {
             'operation': 'core/delete',
             'comment': self.auth_user + ' (api)',
+            'simulate': simulate,
             'class': obj_class,
             'key': {
             }
