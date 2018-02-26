@@ -245,7 +245,7 @@ class Api(object):
 
         data = {
             'operation': 'core/delete',
-            'comment': 'Delete' + obj_class,
+            'comment': self.auth_user + ' (api)',
             'class': obj_class,
             'key': {
             }
@@ -289,7 +289,7 @@ class Api(object):
         if obj['message'] == 'Found: 0' and obj['code'] == 0:
             data = {
                 'operation': 'core/create',
-                'comment': 'Create' + obj_class,
+                'comment': self.auth_user + ' (api)',
                 'class': obj_class,
                 'output_fields': output_fields,
                 'fields': {
@@ -341,7 +341,7 @@ class Api(object):
 
         data = {
             'operation': 'core/update',
-            'comment': 'Create' + obj_class,
+            'comment': self.auth_user + ' (api)',
             'class': obj_class,
             'output_fields': output_fields,
             'fields': {
