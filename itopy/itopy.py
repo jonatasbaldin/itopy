@@ -235,12 +235,13 @@ class Api(object):
         return request
 
     @auth
-    def delete(self, obj_class, simulate=False, **kwargs):
+    def delete(self, obj_class, simulate=False, key=None, **kwargs):
         """
         Handles the core/delete operation in iTOP.
         Parameters:
         ojb_class: iTOP's device class from datamodel
         simulate: False by default
+        key: search key; can be OQL filter or object id. Warning : will override any kwargs
         **kwargs: any field from the datamodel to identify the object
         """
 
@@ -253,12 +254,14 @@ class Api(object):
             }
         }
 
-        for key, value in kwargs.items():
+        for k, value in kwargs.items():
             if value:
-                data['key'][key] = value
+                data['key'][k] = value
             if not value:
                 return 'Parameter not valid!'
 
+        if(key != None):
+            data['key']=key
         request = self.req(data, obj_class)
         return request
 
