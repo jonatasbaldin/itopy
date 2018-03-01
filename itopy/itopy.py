@@ -344,6 +344,8 @@ class Api(object):
             it is recommended to use just brand_id, in that case
         """
 
+
+
         data = {
             'operation': 'core/update',
             'comment': self.auth_user + ' (api)',
@@ -355,6 +357,9 @@ class Api(object):
                 key: key_value
              }
         }
+
+        if key == 'key':
+            data['key'] = key_value
 
         # do not allow empty values in parameters
         for kkey, kvalue in kwargs.items():
