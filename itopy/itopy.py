@@ -235,28 +235,33 @@ class Api(object):
         return request
 
     @auth
-    def delete(self, obj_class, **kwargs):
+    def delete(self, obj_class, simulate=False, key=None, **kwargs):
         """
         Handles the core/delete operation in iTOP.
         Parameters:
         ojb_class: iTOP's device class from datamodel
+        simulate: False by default
+        key: search key; can be OQL filter or object id. Warning : will override any kwargs
         **kwargs: any field from the datamodel to identify the object
         """
 
         data = {
             'operation': 'core/delete',
-            'comment': 'Delete' + obj_class,
+            'comment': self.auth_user + ' (api)',
+            'simulate': simulate,
             'class': obj_class,
             'key': {
             }
         }
 
-        for key, value in kwargs.items():
+        for k, value in kwargs.items():
             if value:
-                data['key'][key] = value
+                data['key'][k] = value
             if not value:
                 return 'Parameter not valid!'
 
+        if(key != None):
+            data['key']=key
         request = self.req(data, obj_class)
         return request
 
@@ -289,7 +294,7 @@ class Api(object):
         if obj['message'] == 'Found: 0' and obj['code'] == 0:
             data = {
                 'operation': 'core/create',
-                'comment': 'Create' + obj_class,
+                'comment': self.auth_user + ' (api)',
                 'class': obj_class,
                 'output_fields': output_fields,
                 'fields': {
@@ -339,9 +344,11 @@ class Api(object):
             it is recommended to use just brand_id, in that case
         """
 
+
+
         data = {
             'operation': 'core/update',
-            'comment': 'Create' + obj_class,
+            'comment': self.auth_user + ' (api)',
             'class': obj_class,
             'output_fields': output_fields,
             'fields': {
@@ -350,6 +357,9 @@ class Api(object):
                 key: key_value
              }
         }
+
+        if key == 'key':
+            data['key'] = key_value
 
         # do not allow empty values in parameters
         for kkey, kvalue in kwargs.items():
