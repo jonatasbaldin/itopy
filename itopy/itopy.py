@@ -384,3 +384,43 @@ class Api(object):
 
         request = self.req(data, obj_class)
         return request
+
+    @auth
+    def apply_stimulus(self, obj_class, key, key_value, stimulus, output_fields='*', **kwargs):
+        """
+        Handles the core/apply_stimulus operation in iTOP.
+        Parameters:
+        :param obj_class: iTOP's device class from datamodel
+        :param output_fields: fields to get from iTOP's response
+        :param key: field to identify the the unique object
+        :param key_value: value to the above field
+        :param stimulus: key of the stimulus
+        :param **kwargs: any field needed in stimulus
+        """
+
+        data = {
+            'operation': 'core/apply_stimulus',
+            'comment': self.auth_user + ' (api)',
+            'class': obj_class,
+            'stimulus': stimulus,
+            'output_fields': output_fields,
+            'fields': {
+            },
+            'key': {
+                key: key_value
+            }
+        }
+
+        if key == 'key':
+            data['key'] = key_value
+
+        # do not allow empty values in parameters
+        for kkey, kvalue in kwargs.items():
+            if kvalue:
+                data['fields'][kkey] = kvalue
+            if not kvalue:
+                return 'Parameter not valid'
+
+        request = self.req(data, obj_class)
+        return request
+

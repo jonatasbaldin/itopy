@@ -1,3 +1,4 @@
+v0.1.7, 10-15-18 -- Added feature to apply stimulus
 v0.1.6, 10-15-18 -- Objects keys are now an optional argument (allows to use with custom itop extensions)
 v0.1.5, 01-05-18 -- Deactivated duplication test on UserRequest
 v0.1.4, 15-04-18 -- Fix installation bug
