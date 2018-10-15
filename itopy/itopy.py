@@ -3,7 +3,9 @@ Python library for iTOP API
 github.com/jonatasbaldin/itopy
 """
 
-import requests, json
+import json
+import requests
+
 
 class MyException(Exception):
     """
@@ -11,17 +13,30 @@ class MyException(Exception):
     """
     pass
 
+
 class Api(object):
     """
     To instanciate an itopy object.
     No parameter needed.
     """
 
-    def __init__(self):
+    def __init__(self, search_keys=None):
         """
-        Just init
+        Init
+        :param search_keys: dict of objects and the associated key.
+               Prevents duplicated objects.
+               You can use "dontcheck" value to allow duplication
         """
-        pass
+        if search_keys is not None:
+            self.obj_dict = search_keys
+        else:
+            self.obj_dict = {
+                'VLAN': 'vlan_tag',
+                'IPv4Address': 'ip',
+                'lnkConnectableCIToNetworkDevice': 'dontcheck',
+                'IPv4Range': 'range',
+                'UserRequest': 'dontcheck'
+            }
 
     def connect(self, url, version, auth_user, auth_pwd):
         """
@@ -50,13 +65,13 @@ class Api(object):
 
         # Multiple  exceptions
         schema_exceptions = (requests.exceptions.MissingSchema,
-            requests.exceptions.InvalidSchema)
+                             requests.exceptions.InvalidSchema)
 
         # Tries web request
         try:
             req = requests.post(self.url, data={'version': self.version,
-                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
-                'json_data': json_data})
+                                                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
+                                                'json_data': json_data})
         except schema_exceptions  as e:
             return 'The http:// is missing or invalid'
         except requests.exceptions.ConnectionError as e:
@@ -91,6 +106,7 @@ class Api(object):
         Parameters:
         func: function to authenticate
         """
+
         # gets the function and all its parameters
         def inner(self, *args, **kwargs):
             # verify if self.auth is 0 (auththenticated) or not
@@ -100,6 +116,7 @@ class Api(object):
             else:
                 # if not, returns that it is not authenticated
                 return self.connect_error(self.auth)
+
         # returns the inner function
         return inner
 
@@ -107,7 +124,7 @@ class Api(object):
         """
         Return connection error, if any.
         """
-        error_dict = { 
+        error_dict = {
             0: 'OK - No issue has been encountered',
             1: """UNAUTHORIZED - Missing/wrong credentials or the user does 
                 not have enough rights to perform the requested operation""",
@@ -125,11 +142,12 @@ class Api(object):
             100: """INTERNAL_ERROR - The operation could not be performed, 
                 see the message for troubleshooting""",
         }
-    
+
         if error_dict.get(error):
             return error_dict[error]
         else:
             return 'UNKNOW_ERROR - Not specified by ITOP'
+
     @auth
     def req(self, data, obj_class):
         """
@@ -140,17 +158,17 @@ class Api(object):
         ojb_class: iTOP's device class from datamodel
         """
         json_data = json.dumps(data)
-        #json_data = jsonpickle.encode(data)
+        # json_data = jsonpickle.encode(data)
 
         # Multiple  exceptions
         schema_exceptions = (requests.exceptions.MissingSchema,
-            requests.exceptions.InvalidSchema)
+                             requests.exceptions.InvalidSchema)
 
         # Tries web request
         try:
             req = requests.post(self.url, data={'version': self.version,
-                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
-                'json_data': json_data})
+                                                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
+                                                'json_data': json_data})
         except schema_exceptions  as e:
             return 'The http:// is missing or invalid'
         except requests.exceptions.ConnectionError as e:
@@ -166,9 +184,9 @@ class Api(object):
 
         # Default return_list 
         return_list = {
-                        'code': json_return['code'],
-                        'message': json_return['message'],
-                      }
+            'code': json_return['code'],
+            'message': json_return['message'],
+        }
 
         # if there's no error, returns +objects and +item_key
         if return_code == 0:
@@ -180,9 +198,9 @@ class Api(object):
             if temp_dict is not None:
                 for key in json_return['objects']:
                     item_key.append(json_return['objects'][key]['key'])
-                
+
                 # old comprehension..
-                #item_key.append(int([objects[p]['key'] for p in objects][0]))
+                # item_key.append(int([objects[p]['key'] for p in objects][0]))
 
             # adds objects and item_key do dict
             return_list['objects'] = json_return['objects']
@@ -201,16 +219,8 @@ class Api(object):
         Parameters:
         obj_class: iTOP's device class from datamodel
         """
-        obj_dict = {
-            'VLAN': 'vlan_tag',
-            'IPv4Address': 'ip',
-            'lnkConnectableCIToNetworkDevice': 'dontcheck',
-            'IPv4Range':'range',
-            'UserRequest':'dontcheck'
-        }
-        
-        if obj_dict.get(obj_class):
-            return obj_dict[obj_class]
+        if obj_class in self.obj_dict:
+            return self.obj_dict[obj_class]
         else:
             return 'name'
 
@@ -261,8 +271,8 @@ class Api(object):
             if not value:
                 return 'Parameter not valid!'
 
-        if(key != None):
-            data['key']=key
+        if (key != None):
+            data['key'] = key
         request = self.req(data, obj_class)
         return request
 
@@ -345,8 +355,6 @@ class Api(object):
             it is recommended to use just brand_id, in that case
         """
 
-
-
         data = {
             'operation': 'core/update',
             'comment': self.auth_user + ' (api)',
@@ -356,7 +364,7 @@ class Api(object):
             },
             'key': {
                 key: key_value
-             }
+            }
         }
 
         if key == 'key':
