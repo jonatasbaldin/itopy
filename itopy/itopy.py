@@ -23,6 +23,7 @@ class Api(object):
     def __init__(self, search_keys=None):
         """
         Init
+        :type search_keys: dict
         :param search_keys: dict of objects and the associated key.
                Prevents duplicated objects.
                You can use "dontcheck" value to allow duplication
@@ -37,15 +38,20 @@ class Api(object):
                 'IPv4Range': 'range',
                 'UserRequest': 'dontcheck'
             }
+        self.url = None
+        self.version = None
+        self.auth_user = None
+        self.auth_pwd = None
+        self.auth = 0
 
     def connect(self, url, version, auth_user, auth_pwd):
         """
         Connect to iTOP JSON webservice.
         Parameters:
-        url: url to iTOPs rest.php page
-        version: API version
-        auth_user: user to authenticate
-        auth_pwd: user password
+        :param url: url to iTOPs rest.php page
+        :param version: API version
+        :param auth_user: user to authenticate
+        :param auth_pwd: user password
         """
         self.url = url
         self.version = version
@@ -70,11 +76,12 @@ class Api(object):
         # Tries web request
         try:
             req = requests.post(self.url, data={'version': self.version,
-                                                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
+                                                'auth_user': self.auth_user,
+                                                'auth_pwd': self.auth_pwd,
                                                 'json_data': json_data})
-        except schema_exceptions  as e:
+        except schema_exceptions:
             return 'The http:// is missing or invalid'
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             return 'The connection to iTOP was refused'
 
         if req.status_code != 200:
@@ -83,44 +90,42 @@ class Api(object):
         # The return is 'bytes', convert to string
         try:
             return_code = json.loads(req.content.decode('utf-8'))['code']
-        except ValueError as e:
+        except ValueError:
             return 'Not a valid JSON, maybe the page is returning other data'
 
         # Authenticate
         if return_code == 0:
             self.auth = 0
             return self.auth
-        else:
-            try:
-                # If not, return custom excpetion with iTOP connection error
-                self.auth = 1
-                # Raises custom exception
-                raise MyException(self.connect_error(return_code))
-            except MyException as e:
-                # Returns just custom exception message
-                return e.args[0]
+        try:
+            # If not, return custom excpetion with iTOP connection error
+            self.auth = 1
+            # Raises custom exception
+            raise MyException(Api.connect_error(return_code))
+        except MyException as exception:
+            # Returns just custom exception message
+            return exception.args[0]
 
     def auth(func):
         """
         Decorator to authenticate the functions that must be authenticated
         Parameters:
-        func: function to authenticate
+        :param func: function to authenticate
         """
-
         # gets the function and all its parameters
         def inner(self, *args, **kwargs):
             # verify if self.auth is 0 (auththenticated) or not
             if self.auth == 0:
                 # if it ts, return the function with normal request
                 return func(self, *args, **kwargs)
-            else:
-                # if not, returns that it is not authenticated
-                return self.connect_error(self.auth)
+            # if not, returns that it is not authenticated
+            return Api.connect_error(self.auth)
 
         # returns the inner function
         return inner
 
-    def connect_error(self, error):
+    @staticmethod
+    def connect_error(error):
         """
         Return connection error, if any.
         """
@@ -145,8 +150,7 @@ class Api(object):
 
         if error_dict.get(error):
             return error_dict[error]
-        else:
-            return 'UNKNOW_ERROR - Not specified by ITOP'
+        return 'UNKNOW_ERROR - Not specified by ITOP'
 
     @auth
     def req(self, data, obj_class):
@@ -154,8 +158,8 @@ class Api(object):
         Gereral request to iTOP API.
         Handles requests for all functions.
         Parameters:
-        data: JSON structure data, in dict
-        ojb_class: iTOP's device class from datamodel
+        :param data: JSON structure data, in dict
+        :param ojb_class: iTOP's device class from datamodel
         """
         json_data = json.dumps(data)
         # json_data = jsonpickle.encode(data)
@@ -167,16 +171,17 @@ class Api(object):
         # Tries web request
         try:
             req = requests.post(self.url, data={'version': self.version,
-                                                'auth_user': self.auth_user, 'auth_pwd': self.auth_pwd,
+                                                'auth_user': self.auth_user,
+                                                'auth_pwd': self.auth_pwd,
                                                 'json_data': json_data})
-        except schema_exceptions  as e:
+        except schema_exceptions:
             return 'The http:// is missing or invalid'
-        except requests.exceptions.ConnectionError as e:
+        except requests.exceptions.ConnectionError:
             return 'The connection to iTOP was refused'
 
         try:
             json_return = json.loads(req.content.decode('utf-8'))
-        except ValueError as e:
+        except ValueError:
             return 'Not a valid JSON, maybe the page is returning other data'
 
         # The return is 'bytes', convert to string
@@ -217,21 +222,20 @@ class Api(object):
         The default return is name, which is default for a lot of objects,
         if it should not be, it's gonna return an iTOP's error
         Parameters:
-        obj_class: iTOP's device class from datamodel
+        :param obj_class: iTOP's device class from datamodel
         """
         if obj_class in self.obj_dict:
             return self.obj_dict[obj_class]
-        else:
-            return 'name'
+        return 'name'
 
     @auth
     def get(self, obj_class, key, output_fields='*'):
         """
         Handles the core/get operation in iTOP.
         Parameters:
-        ojb_class: iTOP's device class from datamodel
-        key: search filter in iTOP's datamodel
-        output_fields: fields to get from iTOP's response, defaults is name
+        :param ojb_class: iTOP's device class from datamodel
+        :param key: search filter in iTOP's datamodel
+        :param output_fields: fields to get from iTOP's response, defaults is name
         """
 
         data = {
@@ -250,10 +254,10 @@ class Api(object):
         """
         Handles the core/delete operation in iTOP.
         Parameters:
-        ojb_class: iTOP's device class from datamodel
-        simulate: False by default
-        key: search key; can be OQL filter or object id. Warning : will override any kwargs
-        **kwargs: any field from the datamodel to identify the object
+        :param ojb_class: iTOP's device class from datamodel
+        :param simulate: False by default
+        :param key: search key; can be OQL filter or object id. Warning : will override any kwargs
+        :param **kwargs: any field from the datamodel to identify the object
         """
 
         data = {
@@ -271,7 +275,7 @@ class Api(object):
             if not value:
                 return 'Parameter not valid!'
 
-        if (key != None):
+        if key is not None:
             data['key'] = key
         request = self.req(data, obj_class)
         return request
@@ -281,11 +285,12 @@ class Api(object):
         """
         Handles the core/create operation in iTOP.
         Parameters:
-        obj_class: iTOP's device class from datamodel
-        output_fields: fields to get from iTOP's response
-        **kwargs: any field to add in the object from the datamodel, note that
+        :param obj_class: iTOP's device class from datamodel
+        :param output_fields: fields to get from iTOP's response
+        :param **kwargs: any field to add in the object from the datamodel, note that
             some fields, like brand_name is not added without its id, brand_id,
             it is recommended to use just brand_id, in that case
+        :return dict
         """
 
         # verifies if object exists
@@ -346,11 +351,11 @@ class Api(object):
         Handles the core/update operation in iTOP.
         TODO: Until now just handles objects that have 'name' field
         Parameters:
-        obj_class: iTOP's device class from datamodel
-        output_fields: fields to get from iTOP's response
-        key: field to identify the the unique object 
-        key_value: value to the above field
-        **kwargs: any field to update the object from the datamodel, note that
+        :param obj_class: iTOP's device class from datamodel
+        :param output_fields: fields to get from iTOP's response
+        :param key: field to identify the the unique object
+        :param key_value: value to the above field
+        :param **kwargs: any field to update the object from the datamodel, note that
             some fields, like brand_name is not added without its id, brand_id,
             it is recommended to use just brand_id, in that case
         """
