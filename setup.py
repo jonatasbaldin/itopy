@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name="itopy",
-    version="0.1.5",
+    version="0.1.7",
     author="Jonatas Baldin",
     author_email="jonatas.baldin@gmail.com",
     packages=["itopy"],
